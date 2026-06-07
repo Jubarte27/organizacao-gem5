@@ -1,22 +1,29 @@
 #!/bin/env bash
 
-gem5 () {
-    EXEC="$GEM_5_DIR/build/ALL/gem5.opt"
-    ensure $EXEC "$@"
-}
-
 main() {
     set_log_depth 0
 
-    GEM_5_DIR="$PROJECT_DIR/gem5"
-    VENV_DIR="$PROJECT_DIR/.venv"
-    MAX_THREAD="$(nproc --ignore 2)"
+    run_docker gcc src/chud.c -lgmp -lm -static -o chud
 
-    # shellcheck source=../.venv/bin/activate
-    source "$VENV_DIR/bin/activate"
+    EXEC="$GEM_5_DIR/build/X86/gem5.opt"
 
-    ensure cd "$GEM_5_DIR"
+    run_docker $EXEC orgb_configs/simulate.py run-benchmark -c chud 1000000 5
+
 }
+
+build_if_not_exists() {
+    if [[ "$(docker images -q "$1" 2> /dev/null)" == "" ]]; then
+        echo "Image $1 does not exist. Building..."
+        docker build --build-arg MAX_THREAD="$(nproc --ignore 2)" --force-rm --tag "$1" "$2"
+        # make -C "$PROJECT_DIR" build
+    else
+        echo "Image $1 already exists. Skipping build."
+    fi
+}
+
+run_docker()        { docker run --rm -v "$PROJECT_DIR:/data" -w /data $IMAGE_NAME "${@}";}
+
+
 
 _setConfigArgs() {
     while [ "${1:-}" != '' ]; do
@@ -37,10 +44,10 @@ _setConfigArgs() {
 
 
 set_env() {
-    :
+    IMAGE_NAME=orgb:latest
+    GEM_5_DIR=/opt/gem5
 }
 
-PROJECT_DIR=..
 SCRIPT_DIR=$(dirname "$(readlink -e "${BASH_SOURCE[0]}")") && source "$SCRIPT_DIR/util.bash"
 set_env
 _setConfigArgs "$@"
