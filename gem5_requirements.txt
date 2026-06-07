@@ -1,1 +1,6 @@
-tk-dev build-essential zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config wget cmake doxygen clang-format
+build-essential zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config
+
+
+libgmp-dev libgmp10
+
+gcc chud.c -I. -lgmp -lm
