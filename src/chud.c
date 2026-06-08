@@ -3,61 +3,10 @@
 #include <math.h>
 #include <gmp.h>
 
-void chudnovsky_pi(int digits) {
-    mpf_t pi, k, ak, bk, ck, dk, temp;
-    mpf_init2(pi, digits * 2);
-    mpf_init2(k, digits * 2);
-    mpf_init2(ak, digits * 2);
-    mpf_init2(bk, digits * 2);
-    mpf_init2(ck, digits * 2);
-    mpf_init2(dk, digits * 2);
-    mpf_init2(temp, digits * 2);
-
-    mpf_set_ui(ak, 1);
-    mpf_set_ui(bk, 0);
-    mpf_set_ui(ck, 1);
-    mpf_set_ui(dk, 1);
-
-    int iterations = digits / 14 + 1;
-    int i;
-
-    for (i = 0; i < iterations; i++) {
-        mpf_set_ui(k, i + 1);
-        mpf_mul_ui(k, k, 6);
-
-        mpf_mul_ui(ak, ak, (i * 2 + 1));
-        mpf_mul_ui(ak, ak, (i * 2 + 2));
-        mpf_mul_ui(bk, bk, i * 2 + 1);
-        mpf_mul_ui(bk, bk, i * 2 + 2);
-        mpf_mul_ui(ck, ck, 16 * (i * 2 + 1) * (i * 2 + 2) * (i * 2 + 3));
-        mpf_mul_ui(dk, dk, i + 1);
-        mpf_mul_ui(dk, dk, i + 1);
-        mpf_mul_ui(dk, dk, i + 1);
-        mpf_div(ck, ak, ck);
-        mpf_div(dk, bk, dk);
-        mpf_sub(temp, ck, dk);
-
-        mpf_add(pi, pi, temp);
-    }
-
-    mpf_ui_div(pi, 1, pi);
-
-    gmp_printf("pi: %.Ff\n", pi);
-
-    mpf_clear(pi);
-    mpf_clear(k);
-    mpf_clear(ak);
-    mpf_clear(bk);
-    mpf_clear(ck);
-    mpf_clear(dk);
-    mpf_clear(temp);
-}
-
 #define mp_init(type, args...) mp##type##_t args; mp##type##_inits(args, NULL)
 
-
 void chud(int digits) {
-    mp_bitcnt_t bits = digits * log2(10) + 5;
+    unsigned int bits = digits * log2(10) + 5;
     mpf_t pi, temp, constant;
     mpf_init2(pi, bits);
     mpf_init2(temp, bits);

@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.5)
+set(CMAKE_C_COMPILER gcc)
+
+project(PerformanceBenchmarks C)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Ensure standard C configuration
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+# 1. Handle the output directory ($run_dir)
+if(NOT RUN_DIR)
+    set(RUN_DIR "${CMAKE_BINARY_DIR}/run_dir")
+endif()
+
+# Setting this globally ensures BOTH executables drop into $run_dir
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${RUN_DIR}")
+
+link_directories("${CMAKE_CURRENT_SOURCE_DIR}/ext/lib")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/ext/include")
+
+add_executable(radix radix.c)
+set_target_properties(radix PROPERTIES LINK_FLAGS "-static")
+
+add_executable(chud chud.c)
+target_link_libraries(chud PRIVATE gmp)
+set_target_properties(chud PROPERTIES LINK_FLAGS "-static")

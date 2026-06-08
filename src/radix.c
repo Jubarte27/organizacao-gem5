@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "big_array.h"
 
@@ -11,18 +12,30 @@
 
 #define swap(a, b) do {__typeof__(a) _tmp = (a); a = b; b = _tmp;} while (0)
 
-void counting_sort_by_digit(const int* src, int* dst, int exp);
+void counting_sort_by_digit(const unsigned int* src, unsigned int* dst, int exp);
 void radix_sort();
 int get_max();
 
 int main() {
     radix_sort();
     FILE *f = NULL;
+
+
+    char cwd[256];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Diretorio atual: %s\n", cwd);
+    } else {
+        perror("Erro ao obter o diretorio");
+        return 1;
+    }
+
     f = fopen("radix.out", "w");
     for (int i = 0; i < n; i++) {
         fprintf(f, "%s%d", i==0?"":" ", arr[i]);
     }
     fprintf(f, "\n");
+
+    fclose(f);
 
     return EXIT_SUCCESS;
 }
@@ -30,9 +43,9 @@ int main() {
 void radix_sort() {
     int max = get_max();
 
-    int* src = arr;
-    int* dst_ = (int*)malloc(n_byte);
-    int* dst = dst_;
+    unsigned int* src = arr;
+    unsigned int* dst_ = (unsigned int*)malloc(n_byte);
+    unsigned int* dst = dst_;
 
     if (dst == NULL) {
         fprintf(stderr, "Unsuccessful memory allocation");
@@ -52,7 +65,7 @@ void radix_sort() {
 }
 
 #define digit ((src[i] / exp) % radix)
-void counting_sort_by_digit(const int* src, int* dst, int exp) {
+void counting_sort_by_digit(const unsigned int* src, unsigned int* dst, int exp) {
     int count[radix] = { 0 };
 
     for (int i = 0; i < n; i++) {
