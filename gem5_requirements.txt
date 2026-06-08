@@ -1,5 +1,6 @@
 build-essential zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config
 
+autoconf libtool
 
 libgmp-dev libgmp10
 

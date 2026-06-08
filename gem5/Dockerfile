@@ -2,6 +2,8 @@ FROM ubuntu:bionic as base
 ARG MAX_THREAD
 
 COPY requirements.txt /opt/requirements.txt
+COPY gmp /opt/gmp-git
+########################
 WORKDIR /opt/gem5
 RUN apt-get update
 RUN apt-get -y install python2.7 python-pip git
@@ -14,9 +16,17 @@ RUN pip install -r "/opt/requirements.txt"
 
 FROM base as depend
 ARG MAX_THREAD
-RUN apt-get -y install build-essential swig zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config libgmp-dev libgmp10
+RUN apt-get -y install build-essential swig zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config autoconf libtool yacc
+
+#############################
+WORKDIR /opt/gmp-git
+RUN <<-EOF
+    ./.bootstrap
+    ./configure --disable-assembly --host=none-pc-linux-gnu
+    make -j "${MAX_THREAD}"
+EOF
 
 FROM depend as gem5
 ARG MAX_THREAD
-
+WORKDIR /opt/gem5
 RUN scons build/X86/gem5.opt -j "${MAX_THREAD}"

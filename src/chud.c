@@ -114,7 +114,6 @@ void chud(int digits) {
 
 int main(int argc, char** argv) {
     int digits = argc > 1 ? atoi(argv[1]) : 1000;
-    printf("%d\n", argc);
     chud(digits);
     return 0;
 }
