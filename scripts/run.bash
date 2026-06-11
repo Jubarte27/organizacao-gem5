@@ -1,4 +1,5 @@
 #!/bin/env bash
+set -e
 
 adjectives=("happy" "brave" "clever" "bright" "calm" "jolly" "kind" "silly" "witty" "cozy")
 animals=("panda" "koala" "otter" "fox" "badger" "hedgehog" "dolphin" "penguin" "owl" "rabbit")
@@ -10,28 +11,28 @@ main() {
     run_anim=${animals[$RANDOM % ${#animals[@]}]}
     run_uuid=$(cat /proc/sys/kernel/random/uuid)
 
-    docker_dir=/data
+    local docker_dir="/data"
 
-    run_dir=".run/$run_adj-$run_anim-$run_uuid"
+    local run_dir=".run/$run_adj-$run_anim-$run_uuid"
     mkdir -p "$run_dir"
     echo i live on "$run_dir"
 
-    chud="$docker_dir/$run_dir/chud"
-    radix="$docker_dir/$run_dir/radix"
-
-    build_dir="src/build"
+    local build_dir="src/build"
     mkdir -p "$build_dir"
 
     python3 "$PROJECT_DIR/src/make_data.py" 8 10
-    cp "$PROJECT_DIR/src/big_array.h" "$radix.big_array.h"
+    cp "$PROJECT_DIR/src/big_array.h" "$run_dir/radix.big_array.h"
     cd "$PROJECT_DIR" && run_docker ./compile.sh "$docker_dir/$run_dir"
     EXEC="$GEM_5_DIR/build/X86/gem5.opt"
 
     cp -r orgb_configs "$run_dir/orgb_configs"
     cd "$PROJECT_DIR/$run_dir" || exit 1
 
-    run_docker $EXEC --outdir=chud.m5out orgb_configs/simulate.py run-benchmark -c chud -o "100" 2>&1 | tee "$PROJECT_DIR/$chud.txt"
-    run_docker $EXEC --outdir=radix.m5out orgb_configs/simulate.py run-benchmark -c radix 2>&1 | tee "$PROJECT_DIR/$radix.txt"
+    cp "$PROJECT_DIR/src/cha.c" "$PROJECT_DIR/$run_dir/cha.in"
+
+    run_docker $EXEC --outdir=chud.m5out orgb_configs/simulate.py run-benchmark -c chud -o "100" 2>&1 | tee "$PROJECT_DIR/$run_dir/chud.txt"
+    run_docker $EXEC --outdir=radix.m5out orgb_configs/simulate.py run-benchmark -c radix 2>&1 | tee "$PROJECT_DIR/$run_dir/radix.txt"
+    run_docker $EXEC --outdir=cha.m5out orgb_configs/simulate.py run-benchmark -c cha 2>&1 | tee "$PROJECT_DIR/$run_dir/cha.txt"
 }
 
 build_if_not_exists() {

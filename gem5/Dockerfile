@@ -13,7 +13,8 @@ RUN pip install -r "/opt/requirements.txt"
 
 FROM base as depend
 ARG MAX_THREAD
-RUN apt-get -y install build-essential swig zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config autoconf libtool cmake
+RUN apt-get -y install build-essential swig zlib1g zlib1g-dev libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev libboost-all-dev libhdf5-serial-dev m4 libcapstone-dev libpng-dev libelf-dev pkg-config autoconf libtool cmake gcc-multilib g++-multilib bison byacc
+RUN apt-get -y install texinfo
 
 FROM depend as gem5
 ARG MAX_THREAD
