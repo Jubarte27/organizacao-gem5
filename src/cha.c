@@ -9,8 +9,11 @@
 #include <unistd.h>
 
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
-#define CH(x, y, z) (((x) & (y)) ^ (~(x) & (z)))
-#define MAJ(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+// #define CH(x, y, z) (((x) & (y)) ^ (~(x) & (z)))
+// #define MAJ(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+#define CH(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
+#define MAJ(x, y, z) (((x) & (y)) ^ ((z) & ((x) ^ (y))))
+
 #define EP0(x) (ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22))
 #define EP1(x) (ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25))
 #define SIG0(x) (ROTR(x, 7) ^ ROTR(x, 18) ^ ((x) >> 3))
@@ -18,10 +21,10 @@
 
 typedef struct {
     uint8_t data[64];
-    uint32_t datalen;
-    uint64_t bitlen;
     uint32_t state[8];
-} cha256_CTX;
+    uint64_t bitlen;
+    uint32_t datalen;
+} __attribute__((aligned(64))) cha256_CTX;
 
 static const uint32_t k[64] = {
     0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
@@ -34,11 +37,12 @@ static const uint32_t k[64] = {
     0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 };
 
-static void cha256_transform(cha256_CTX *ctx, const uint8_t data[]) {
+static void cha256_transform(cha256_CTX* restrict ctx, const uint8_t* restrict data) {
     uint32_t a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
-    for (i = 0, j = 0; i < 16; ++i, j += 4)
-        m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
+    const uint32_t* data32 = (const uint32_t*)data;
+    for (i = 0; i < 16; ++i)
+        m[i] = __builtin_bswap32(data32[i]); // little to big endian
     for ( ; i < 64; ++i)
         m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
 
@@ -65,15 +69,17 @@ void cha256_init(cha256_CTX *ctx) {
     ctx->state[6] = 0x1f83d9ab; ctx->state[7] = 0x5be0cd19;
 }
 
-void cha256_update(cha256_CTX *ctx, const uint8_t data[], size_t len) {
-    for (size_t i = 0; i < len; ++i) {
-        ctx->data[ctx->datalen] = data[i];
-        ctx->datalen++;
-        if (ctx->datalen == 64) {
-            cha256_transform(ctx, ctx->data);
-            ctx->bitlen += 512;
-            ctx->datalen = 0;
-        }
+void cha256_update(cha256_CTX *ctx, const uint8_t data[], const size_t len) {
+    const int q = len / 64;
+    const int r = len % 64;
+    for (int i = 0; i < q; i++) {
+        cha256_transform(ctx, data);
+        ctx->bitlen += 512;
+        data += 64;
+    }
+
+    for (uint32_t i = 0; i < r; i++) {
+        ctx->data[ctx->datalen++] = data[i];
     }
 }
 
@@ -82,38 +88,23 @@ void cha256_final(cha256_CTX *ctx, uint8_t hash[]) {
     
     if (ctx->datalen < 56) {
         ctx->data[i++] = 0x80;
-        while (i < 56) ctx->data[i++] = 0x00;
+        while (i < 56) ctx->data[i++] = 0;
     } else {
         ctx->data[i++] = 0x80;
-        while (i < 64) ctx->data[i++] = 0x00;
+        while (i < 64) ctx->data[i++] = 0;
         cha256_transform(ctx, ctx->data);
         uint8_t* end = ctx->data + 56;
-        for (uint8_t* p = ctx->data; p < end; p++) {
-            *p = 0;
-        }
+        for (uint8_t* p = ctx->data; p < end; p++) *p = 0;
     }
     
-    ctx->bitlen += ctx->datalen * 8;
-    ctx->data[63] = ctx->bitlen;
-    ctx->data[62] = ctx->bitlen >> 8;
-    ctx->data[61] = ctx->bitlen >> 16;
-    ctx->data[60] = ctx->bitlen >> 24;
-    ctx->data[59] = ctx->bitlen >> 32;
-    ctx->data[58] = ctx->bitlen >> 40;
-    ctx->data[57] = ctx->bitlen >> 48;
-    ctx->data[56] = ctx->bitlen >> 56;
+    ctx->bitlen += ctx->datalen << 3;
+
+    ((uint64_t* ) ctx->data)[7] = __builtin_bswap64(ctx->bitlen);
     cha256_transform(ctx, ctx->data);
 
-    for (i = 0; i < 4; ++i) {
-        hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 4]  = (ctx->state[1] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 8]  = (ctx->state[2] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 12] = (ctx->state[3] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 16] = (ctx->state[4] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 20] = (ctx->state[5] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 24] = (ctx->state[6] >> (24 - i * 8)) & 0x000000ff;
-        hash[i + 28] = (ctx->state[7] >> (24 - i * 8)) & 0x000000ff;
-    }
+    uint32_t* hash32 = (uint32_t*)hash;
+    for (i = 0; i < 8; ++i)
+        hash32[i] = __builtin_bswap32(ctx->state[i]);
 }
 
 void cha256(const uint8_t *data, size_t len, uint8_t hash[32]) {
@@ -124,8 +115,10 @@ void cha256(const uint8_t *data, size_t len, uint8_t hash[32]) {
 }
 
 void cha256_to_hex(const uint8_t hash[32], char hex[65]) {
+    static const char hex_chars[] = "0123456789abcdef";
     for (size_t i = 0; i < 32; ++i) {
-        sprintf(hex + (i * 2), "%02x", hash[i]);
+        hex[i * 2]     = hex_chars[(hash[i] >> 4) & 0x0F];
+        hex[i * 2 + 1] = hex_chars[hash[i] & 0x0F];
     }
     hex[64] = '\0';
 }
@@ -140,6 +133,7 @@ int main(int argc, char** argv) {
     // fread usa memset, memset usa movntdq, movntdq não está implementado no processador
     uint8_t* buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (buffer == MAP_FAILED) return 42;
+    madvise(buffer, st.st_size, MADV_SEQUENTIAL);
     
     uint8_t hash[32];
     char hex[65];
