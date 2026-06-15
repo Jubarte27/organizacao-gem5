@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 
 ### Log ###
 ### base styling for log messages NAME;COLORCODE

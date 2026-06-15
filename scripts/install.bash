@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 
 main() {
     set_log_depth 0

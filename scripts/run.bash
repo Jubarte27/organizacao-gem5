@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 set -e
 
 adjectives=("happy" "brave" "clever" "bright" "calm" "jolly" "kind" "silly" "witty" "cozy")
