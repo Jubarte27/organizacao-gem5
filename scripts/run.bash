@@ -31,8 +31,8 @@ main() {
     cp "$PROJECT_DIR/src/cha.c" "$PROJECT_DIR/$run_dir/cha.in"
 
     run_docker $EXEC --outdir=chud.m5out orgb_configs/simulate.py run-benchmark -c chud -o "100" 2>&1 | tee "$PROJECT_DIR/$run_dir/chud.txt"
-    # run_docker $EXEC --outdir=radix.m5out orgb_configs/simulate.py run-benchmark -c radix 2>&1 | tee "$PROJECT_DIR/$run_dir/radix.txt"
-    # run_docker $EXEC --outdir=cha.m5out orgb_configs/simulate.py run-benchmark -c cha 2>&1 | tee "$PROJECT_DIR/$run_dir/cha.txt"
+    run_docker $EXEC --outdir=radix.m5out orgb_configs/simulate.py run-benchmark -c radix 2>&1 | tee "$PROJECT_DIR/$run_dir/radix.txt"
+    run_docker $EXEC --outdir=cha.m5out orgb_configs/simulate.py run-benchmark -c cha 2>&1 | tee "$PROJECT_DIR/$run_dir/cha.txt"
 }
 
 build_if_not_exists() {

@@ -7,11 +7,9 @@
 #include <stdint.h>
 
 
-// funciona até uns k = 219 mil, depois disso tem que usar toda a gmp mesmo 
+// funciona até uns k = 219 mil, depois disso tem que usar tudo em gmp mesmo 
 void chud(uint32_t digits) {
-    float floaty_bits = digits * log2(10);
-    uint32_t bits = floaty_bits + 5;
-    int N = floaty_bits / 64 + 3;
+    int N = ((digits * log2(10)) / 64) + 3;
 
     mp_limb_t P[N];
     mp_limb_t sum[N];
@@ -54,7 +52,7 @@ void chud(uint32_t digits) {
 
     mpz_set_ui(z_sum, 10);
     mpz_pow_ui(z_sum, z_sum, digits);
-    mpz_mul_ui(z_sum, z_sum, 4270934400ULL);
+    mpz_mul_ui(z_sum, z_sum, 4270934400UL);
     mpz_mul_2exp(z_sum, z_sum, 64 * (2 * N - 1));
 
     mpz_tdiv_q(pi, z_sum, den);

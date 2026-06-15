@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "/home/matheus/organizacao-gem5/src"
+    "cmake.sourceDirectory": "/home/matheus/organizacao-gem5/src",
+    "python.terminal.useEnvFile": true
 }
