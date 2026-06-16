@@ -1,64 +1,88 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <math.h>
 #include <gmp.h>
-#include <stdint.h>
 
-void chud(int digits) {
-    int N = (digits * 3.321928) / 64 + 3; // conta de padeiro, funciona pra poucos (3mi) digitos
-
-    mp_limb_t P[N];
-    mp_limb_t sum[N];
-    mp_limb_t term[N];
-
-    for (int i = 0; i < N - 1; i++) {P[i] = 0; sum[i] = 0;}
-
-    P[N - 1] = 1;
-    sum[N - 1] = 13591409;
-
+void chud(uint64_t digits) {
+    mp_bitcnt_t bits = (digits) * ceil(log2(10)) + 5;
     uint64_t iterations = digits / 14 + 1;
-    for (uint64_t k = 1; k <= iterations; k++) {
-        // everything fits in uint64_t as long as k < 219,000 (+-)
-        uint64_t num = 24 * (6 * k - 5) * (2 * k - 1) * (6 * k - 1);
-        uint64_t hehe = k * k * k;
-        uint64_t C = 262537412640768000; // 640320^3
-        uint64_t term_mult = 13591409 + 545140134 * k;
 
-        mpn_mul_1(P, P, N, num);            // 1. P = P * num
-        mpn_divrem_1(term, 0, P, N, hehe);  // 2. term = P / hehe
-        mpn_divrem_1(P, 0, term, N, C);     // 3. P = term / C
-        mpn_mul_1(term, P, N, term_mult);   // 4. term = P * term_mult
+    mpf_t P, sum, k6, abk;  // accumulators
+    mpf_t x, y;             // auxiliary
+    mpf_init2(P, bits);
+    mpf_init2(sum, bits);
+    mpf_init2(k6, bits);
+    mpf_init2(abk, bits);
 
-        if (k % 2 == 0) {
-            mpn_add_n(sum, sum, term, N);
-        } else {
-            mpn_sub_n(sum, sum, term, N);
-        }
+    mpf_init2(x, bits);
+    mpf_init2(y, bits);
+
+    uint64_t A = 13591409;
+    uint64_t B = 545140134;
+    uint64_t C = 262537412640768000; // 640320^3
+
+    mpf_set_ui(sum, A);
+    mpf_set_ui(P, 1);
+    mpf_set_ui(k6, 6);
+    mpf_set_ui(abk, A + B);
+
+    for (uint64_t k = 1; k <= (uint64_t)iterations; k++) {
+        //y = 6k-1
+        mpf_set(y, k6);
+        mpf_sub_ui(y, y, 1);
+
+        //x = 6k-5
+        mpf_set(x, k6);
+        mpf_sub_ui(x, x, 5);
+
+        //y = (6k-1) * (6k-5)
+        mpf_mul(y, y, x);
+
+        //x = (2*k-1) * 24
+        mpf_set(x, k6);
+        mpf_mul_ui(x, x, 8);
+        mpf_sub_ui(x, x, 24);
+
+        // P *= 24 * (6 * k - 5) * (2 * k - 1) * (6 * k - 1)
+        mpf_mul(y, y, x);
+        mpf_mul(P, P, y);
+
+        // den = k * k * k (hehe)
+        mpf_set_ui(y, k);
+        mpf_pow_ui(y, y, 3);
+
+        // P = P / (C * (k^3)
+        mpf_mul_ui(x, y, C);
+        mpf_div(P, P, x);
+
+        // Apply alternating sign: (-1)^k
+        mpf_neg(P, P);
+
+        // accumulate
+        mpf_mul(x, P, abk);
+        mpf_add(sum, sum, x);
+        mpf_add_ui(k6, k6, 6);
+        mpf_add_ui(abk, abk, B);
     }
 
-    mpz_t z_sum;
-    mpz_roinit_n(z_sum, sum, N); // Bind the stack array to an mpz safely
+    // y = constant = sqrt(10005) / 4270934400
+    mpf_sqrt_ui(y, 10005);
+    mpf_set_ui(x, 4270934400);
+    mpf_div(y, y, x);
 
-    unsigned int bits = digits * log2(10) + 5;
-    mpf_t f_sum, pi, constant;
-    mpf_init2(f_sum, bits);
-    mpf_init2(pi, bits);
-    mpf_init2(constant, bits);
+    // sum = pi = 1 / (sum * constant)
+    mpf_mul(sum, sum, y);
+    mpf_ui_div(x, 1, sum);
 
-    mpf_set_z(f_sum, z_sum);
-    mpf_div_2exp(f_sum, f_sum, 64 * (N - 1));
+    // Desgraça arredonda, não sei
+    char* pi_str = malloc(digits + 5);
+    gmp_snprintf(pi_str, digits + 5, "%.*Ff", digits + 1, x);
+    printf("pi: %s\n", pi_str);
+    free(pi_str);
 
-    mpf_sqrt_ui(constant, 10005);
-    mpf_div_ui(constant, constant, 4270934400);
-
-    mpf_mul(f_sum, f_sum, constant);
-    mpf_ui_div(pi, 1, f_sum);
-
-    gmp_printf("pi: %.*Ff\n", digits, pi);
-
-    mpf_clears(f_sum, pi, constant, NULL);
+    mpf_clears(x, y, k6, abk, P, sum, NULL);
 }
-
 
 int main(int argc, char** argv) {
     int digits = argc > 1 ? atoi(argv[1]) : 1000;

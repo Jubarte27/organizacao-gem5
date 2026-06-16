@@ -5,7 +5,7 @@ shopt -s nullglob
 main() {
     set_log_depth 0
     mkdir -p "$(host_dir src/build)"
-    local algorithms=(chud radix cha)
+    local algorithms=(chud)
 
     local gem5=("${EXEC_PREFIX[@]}" "$EXEC")
     local compile_exec=("${EXEC_PREFIX[@]}" "$(target_dir compile.sh)")
@@ -15,6 +15,7 @@ main() {
     for algo in "${algorithms[@]}"; do "${algo}_prepare"; done
 
 
+    # for cpu in CPUBase; do
     for cpu in CPUBase MyO3CPU; do
         ensure cd "$(host_dir)"
         local cpu_run_dir="$RUN_DIR/$cpu"
