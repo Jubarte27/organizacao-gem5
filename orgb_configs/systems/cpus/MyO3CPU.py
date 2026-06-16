@@ -32,7 +32,11 @@
 import m5
 from m5.objects import *
 
+from m5.objects import BaseCache
+from m5.objects import DDR3_1600_8x8
 from m5.objects import DerivO3CPU
+from m5.objects import System
+from m5.objects import SystemXBar
 
 ###############################################################################
 
@@ -181,3 +185,48 @@ class MyO3CPU(DerivO3CPU):
     squashWidth   = 16 # Squash width
 
     fuPool        = MyFUPool() # Functional Unit pool
+
+############################################################
+## Outros parâmetros. Sugestão: não mexer.
+############################################################
+
+    LSQDepCheckShift = 4 # Number of places to shift addr before check
+    LSQCheckLoads = True # Should dependency violations be checked for
+                         # loads & stores or just stores
+    store_set_clear_period = 250000 # Number of load/store insts before
+                                    # the dep predictor should be invalidated
+    LFSTSize = 1024 # Last fetched store table size
+    SSITSize = 1024 # Store set ID table size
+
+    # most ISAs don't use condition-code regs # so default is 0
+    _defaultNumPhysCCRegs = 0
+
+    # For x86, each CC reg is used to hold only a subset of the flags, so we
+    # need 4-5 times the number of CC regs as physical integer regs to be
+    # sure we don't run out.  In typical real machines, CC regs are not
+    # explicitly renamed (it's a side effect of int reg renaming),
+    # so they should never be the bottleneck here.
+    _defaultNumPhysCCRegs = numPhysIntRegs * 5
+    numPhysCCRegs = _defaultNumPhysCCRegs # Number of physical cc registers
+
+    activity = 0 # Initial count
+
+    cacheStorePorts = 1 # Cache Store Ports
+
+    trapLatency = 10 # Trap latency
+    fetchTrapLatency = 1 # Fetch trap latency
+
+    backComSize = 32 # Time buffer size for backwards communication
+    forwardComSize = 32 # Time buffer size for forward communication
+
+    smtNumFetchingThreads = 1 # SMT Number of Fetching Threads
+    smtFetchPolicy = 'SingleThread' # SMT Fetch policy
+    smtLSQPolicy = 'Partitioned' # SMT LSQ Sharing Policy
+    smtLSQThreshold = 100 # SMT LSQ Threshold Sharing Parameter
+    smtIQPolicy = 'Partitioned' # SMT IQ Sharing Policy
+    smtIQThreshold = 100 # SMT IQ Threshold Sharing Parameter
+    smtROBPolicy = 'Partitioned' # SMT ROB Sharing Policy
+    smtROBThreshold = 100 # SMT ROB Threshold Sharing Parameter
+    smtCommitPolicy = 'RoundRobin' # SMT Commit Policy
+
+    needsTSO = True # Enable TSO Memory model

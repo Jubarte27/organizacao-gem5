@@ -133,7 +133,6 @@ int main(int argc, char** argv) {
     // fread usa memset, memset usa movntdq, movntdq não está implementado no processador
     uint8_t* buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (buffer == MAP_FAILED) return 42;
-    madvise(buffer, st.st_size, MADV_SEQUENTIAL);
     
     uint8_t hash[32];
     char hex[65];

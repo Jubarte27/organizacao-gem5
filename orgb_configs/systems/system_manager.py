@@ -2,6 +2,7 @@ from m5.util         import addToPath
 
 # CPUs
 from MyO3CPU import MyO3CPU
+from CPUBase import CPUBase
 
 # System
 from base_system     import BaseSystem
@@ -17,7 +18,9 @@ from m5.objects      import SystemXBar
 class SystemManager:
 
     available_cpus = {
-        "MyO3CPU" : MyO3CPU()}
+        "MyO3CPU" : MyO3CPU(),
+        "CPUBase": CPUBase()
+    }
 
     def getSystem(self, args):
         cpu_name    = args.cpu
