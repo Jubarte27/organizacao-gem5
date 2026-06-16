@@ -1,15 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
 #include <math.h>
 #include <gmp.h>
 #include <stdint.h>
 
-
-// funciona até uns k = 219 mil, depois disso tem que usar tudo em gmp mesmo 
-void chud(uint32_t digits) {
-    int N = ((digits * log2(10)) / 64) + 3;
+void chud(int digits) {
+    int N = (digits * 3.321928) / 64 + 3; // conta de padeiro, funciona pra poucos (3mi) digitos
 
     mp_limb_t P[N];
     mp_limb_t sum[N];
@@ -22,15 +18,16 @@ void chud(uint32_t digits) {
 
     uint64_t iterations = digits / 14 + 1;
     for (uint64_t k = 1; k <= iterations; k++) {
-        uint64_t num       = 24 * (6 * k - 5) * (2 * k - 1) * (6 * k - 1);
-        uint64_t den1      = k * k * k;
-        uint64_t C         = 262537412640768000; 
+        // everything fits in uint64_t as long as k < 219,000 (+-)
+        uint64_t num = 24 * (6 * k - 5) * (2 * k - 1) * (6 * k - 1);
+        uint64_t hehe = k * k * k;
+        uint64_t C = 262537412640768000; // 640320^3
         uint64_t term_mult = 13591409 + 545140134 * k;
 
-        mpn_mul_1(P, P, N, num);
-        mpn_divrem_1(term, 0, P, N, den1);
-        mpn_divrem_1(P, 0, term, N, C);
-        mpn_mul_1(term, P, N, term_mult);
+        mpn_mul_1(P, P, N, num);            // 1. P = P * num
+        mpn_divrem_1(term, 0, P, N, hehe);  // 2. term = P / hehe
+        mpn_divrem_1(P, 0, term, N, C);     // 3. P = term / C
+        mpn_mul_1(term, P, N, term_mult);   // 4. term = P * term_mult
 
         if (k % 2 == 0) {
             mpn_add_n(sum, sum, term, N);
@@ -38,33 +35,30 @@ void chud(uint32_t digits) {
             mpn_sub_n(sum, sum, term, N);
         }
     }
-    
-    mpz_t pi, z_sum, den;
-    mpz_inits(pi, z_sum, den, NULL);
 
-    mpz_set_ui(den, 10005);
-    mpz_mul_2exp(den, den, 2 * 64 * N);
-    mpz_sqrt(den, den); 
+    mpz_t z_sum;
+    mpz_roinit_n(z_sum, sum, N); // Bind the stack array to an mpz safely
 
-    mpz_roinit_n(z_sum, sum, N);
-    mpz_mul(den, z_sum, den);
+    unsigned int bits = digits * log2(10) + 5;
+    mpf_t f_sum, pi, constant;
+    mpf_init2(f_sum, bits);
+    mpf_init2(pi, bits);
+    mpf_init2(constant, bits);
 
+    mpf_set_z(f_sum, z_sum);
+    mpf_div_2exp(f_sum, f_sum, 64 * (N - 1));
 
-    mpz_set_ui(z_sum, 10);
-    mpz_pow_ui(z_sum, z_sum, digits);
-    mpz_mul_ui(z_sum, z_sum, 4270934400UL);
-    mpz_mul_2exp(z_sum, z_sum, 64 * (2 * N - 1));
+    mpf_sqrt_ui(constant, 10005);
+    mpf_div_ui(constant, constant, 4270934400);
 
-    mpz_tdiv_q(pi, z_sum, den);
+    mpf_mul(f_sum, f_sum, constant);
+    mpf_ui_div(pi, 1, f_sum);
 
-    char *str = mpz_get_str(NULL, 10, pi);
-    if (str) {
-        printf("pi: %c.%s\n", str[0], str + 1);
-        free(str);
-    }
+    gmp_printf("pi: %.*Ff\n", digits, pi);
 
-    mpz_clears(den, z_sum, pi, NULL);
+    mpf_clears(f_sum, pi, constant, NULL);
 }
+
 
 int main(int argc, char** argv) {
     int digits = argc > 1 ? atoi(argv[1]) : 1000;
