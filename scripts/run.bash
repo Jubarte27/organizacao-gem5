@@ -29,6 +29,7 @@ run() {
     local cpu=$1
     local algo=$2
     echo "starting $algo on $cpu"
+    local cmd
     algorithm_cmd cmd "$algo"
     gem5 --outdir="$TARGET_RUN_DIR/$cpu/$algo.m5out" "$TARGET_RUN_DIR/orgb_configs/simulate.py" --cpu "$cpu" run-benchmark -c "${cmd[@]}" > "$HOST_RUN_DIR/$cpu/$algo.txt" 2>&1
     echo "finished $algo on $cpu"
