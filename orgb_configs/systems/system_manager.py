@@ -3,6 +3,9 @@ from m5.util         import addToPath
 # CPUs
 from MyO3CPU import MyO3CPU
 from CPUBase import CPUBase
+from CPUBigROB import CPUBigROB
+from CPUMoreFloat import CPUMoreFloat
+from CPUMoreMem import CPUMoreMem
 
 # System
 from base_system     import BaseSystem
@@ -19,7 +22,10 @@ class SystemManager:
 
     available_cpus = {
         "MyO3CPU" : MyO3CPU(),
-        "CPUBase": CPUBase()
+        "CPUBase": CPUBase(),
+        "CPUMoreMem": CPUMoreMem(),
+        "CPUMoreFloat": CPUMoreFloat(),
+        "CPUBigROB": CPUBigROB()
     }
 
     def getSystem(self, args):

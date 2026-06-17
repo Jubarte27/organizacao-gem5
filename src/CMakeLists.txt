@@ -29,5 +29,11 @@ add_executable(chud chud.c)
 target_link_libraries(chud PRIVATE gmp)
 set_target_properties(chud PROPERTIES LINK_FLAGS "-static")
 
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/beemovie.fodase" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+file(RENAME "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/beemovie.fodase" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cha.in")
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/beemovie.fodase" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/beemovie.fodase" "${CMAKE_CURRENT_BINARY_DIR}/cha.in")
+
 add_executable(cha cha.c)
 set_target_properties(cha PROPERTIES LINK_FLAGS "-static")

@@ -16,27 +16,30 @@ void counting_sort_by_digit(const unsigned int* src, unsigned int* dst, int exp)
 void radix_sort();
 int get_max();
 
+
+void fast_print_ints(FILE *stream) {
+    char buffer[4096];
+    int pos = 0;
+
+    for (size_t i = 0; i < n; i++) {
+        if (pos > sizeof(buffer) - 16) { 
+            fwrite(buffer, 1, pos, stream);
+            pos = 0;
+        }
+        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%d ", arr[i]);
+    }
+    if (pos > 0) {
+        fwrite(buffer, 1, pos, stream);
+    }
+    fputc('\n', stream);
+}
+
 int main() {
     radix_sort();
-    FILE *f = NULL;
-
-
-    char cwd[256];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("Diretorio atual: %s\n", cwd);
-    } else {
-        perror("Erro ao obter o diretorio");
-        return 1;
-    }
-
-    f = fopen("radix.out", "w");
-    for (int i = 0; i < n; i++) {
-        fprintf(f, "%s%d", i==0?"":" ", arr[i]);
-    }
-    fprintf(f, "\n");
-
-    fclose(f);
-
+    // Write to a file only when we need to verify. Printing takes as much time as sorting, so it defeats the purpose of tests (we're not trying to test printf)
+    // FILE *f = fopen("radix.out", "w");
+    // fast_print_ints(f);
+    // fclose(f);
     return EXIT_SUCCESS;
 }
 
@@ -46,11 +49,6 @@ void radix_sort() {
     unsigned int* src = arr;
     unsigned int* dst_ = (unsigned int*)malloc(n_byte);
     unsigned int* dst = dst_;
-
-    if (dst == NULL) {
-        fprintf(stderr, "Unsuccessful memory allocation");
-        exit(42);
-    }
 
     for (int exp = 1; max / exp > 0; exp *= radix) {
         counting_sort_by_digit(src, dst, exp);

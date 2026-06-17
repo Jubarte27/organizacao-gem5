@@ -4,46 +4,125 @@ shopt -s nullglob
 
 main() {
     set_log_depth 0
-    mkdir -p "$(host_dir src/build)"
-    local algorithms=(chud)
+    mkdir -p "$HOST_DIR/src/build"
+    local algorithms=(cha chud radix)
 
-    local gem5=("${EXEC_PREFIX[@]}" "$EXEC")
-    local compile_exec=("${EXEC_PREFIX[@]}" "$(target_dir compile.sh)")
+    cp -r "$HOST_DIR/orgb_configs" "$HOST_RUN_DIR/orgb_configs"
+    run_on_target "$TARGET_DIR/compile.sh" "$TARGET_RUN_DIR"
 
-    cp -r "$(host_dir orgb_configs)" "$(host_dir "$RUN_DIR/orgb_configs")"
-    "${compile_exec[@]}" "$(target_dir "$RUN_DIR")"
-    for algo in "${algorithms[@]}"; do "${algo}_prepare"; done
+    for algo in "${algorithms[@]}"; do prepare "$algo"; done
 
-
+    
     # for cpu in CPUBase; do
-    for cpu in CPUBase MyO3CPU; do
-        ensure cd "$(host_dir)"
-        local cpu_run_dir="$RUN_DIR/$cpu"
-        mkdir -p "$(host_dir "$cpu_run_dir")"
-
-        ensure cd "$(host_dir "$RUN_DIR")"
+    for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUBigROB; do
+        mkdir -p "$HOST_RUN_DIR/$cpu"
         for algo in "${algorithms[@]}"; do
-            local -n cmd="${algo}_CMD"
-            "${gem5[@]}" --outdir="$cpu/$algo.m5out" orgb_configs/simulate.py --cpu "$cpu" run-benchmark -c "${cmd[@]}" 2>&1 | tee "$cpu/$algo.txt"
+            run "$cpu" "$algo" &
         done
+    done
+    wait
+    echo "done"
+
+}
+
+run() {
+    local cpu=$1
+    local algo=$2
+    echo "starting $algo on $cpu"
+    algorithm_cmd cmd "$algo"
+    gem5 --outdir="$TARGET_RUN_DIR/$cpu/$algo.m5out" "$TARGET_RUN_DIR/orgb_configs/simulate.py" --cpu "$cpu" run-benchmark -c "${cmd[@]}" > "$HOST_RUN_DIR/$cpu/$algo.txt" 2>&1
+    echo "finished $algo on $cpu"
+}
+
+gem5() {
+    local exec;
+    case "$RUN_METHOD" in
+        vm)     exec=$VM_GEM5 ;;
+        docker) exec=$DOCKER_GEM5 ;;
+        *)      log_error "Run set_env before calling me" ;;
+    esac
+    run_on_target $exec "$@"
+}
+
+run_on_target() {
+    case "$RUN_METHOD" in
+        vm)     "$@" ;;
+        docker) run_docker "$@" ;;
+        *)      log_error "Run set_env before calling me" ;;
+    esac
+}
+
+algorithm_cmd() {
+    local -n _cmd=$1
+    case "$2" in
+        cha)   _cmd=("$TARGET_RUN_DIR/cha") ;;
+        chud)  _cmd=("$TARGET_RUN_DIR/chud" -o "100") ;;
+        radix) _cmd=("$TARGET_RUN_DIR/radix") ;;
+        *)     log_error "Don't know $2" ;;
+    esac
+}
+
+prepare() {
+    case "$1" in
+        cha)   ;;
+        chud)  ;;
+        radix) python3 "$HOST_DIR/src/make_data.py" 8 10 "$HOST_RUN_DIR/radix.big_array.h" ;;
+        *)     log_error "Don't know $1" ;;
+    esac
+}
+
+run_docker()        { docker run --rm -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data $IMAGE_NAME "${@}"; }
+run_docker_orgb()   { docker run --rm -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data orgb:latest "${@}"; }
+
+
+_setConfigArgs() {
+    while [ "${1:-}" != '' ]; do
+        case "$1" in
+            ## Options
+            
+            ## end of Options
+            [!-]*)
+                break
+                ;;
+            *)
+                log "$WARN" "Unknown option \"$1\", ignoring" 0 
+            ;;
+        esac
+        shift
     done
 }
 
-cha_prepare()   { cp "$(host_dir src/cha.c)" "$(host_dir "$RUN_DIR/cha.in")"; }
-chud_prepare()  { :; }
-radix_prepare() { python3 "$(host_dir /src/make_data.py)" 8 10 "$(host_dir "$RUN_DIR/radix.big_array.h")"; }
-
-build_if_not_exists() {
-    if [[ "$(docker images -q "$1" 2> /dev/null)" == "" ]]; then
-        echo "Image $1 does not exist. Building..."
-        docker build --build-arg MAX_THREAD="$(nproc --ignore 2)" --force-rm --tag "$1" "$2"
-    else
-        echo "Image $1 already exists. Skipping build."
-    fi
+docker_exists() {
+    {
+        {
+            docker image ls --filter reference="$IMAGE_NAME" --format "{{.Repository}}:{{.Tag}}" | grep --line-regexp -q "$IMAGE_NAME"
+        } > /dev/null 2>&1
+    } && { run_docker [ -f "$DOCKER_GEM5" ]; }
 }
 
-run_docker()        { docker run --rm -v "$(pwd):/data" -w /data $IMAGE_NAME "${@}"; }
-run_docker_orgb()   { docker run --rm -v "$(pwd):/data" -w /data orgb:latest "${@}"; }
+set_env() {
+    IMAGE_NAME=orgb:latest
+    DOCKER_GEM5="/opt/gem5/build/X86/gem5.opt"
+    VM_GEM5="/home/orgb/gem5/build/X86/gem5.opt"
+
+    RUN_DIR="$(next_dir .run)"
+    HOST_DIR=$PROJECT_DIR
+    HOST_RUN_DIR="$HOST_DIR/$RUN_DIR"
+
+    mkdir -p "$HOST_RUN_DIR"
+
+    if [ -f "$VM_GEM5" ] ; then
+        TARGET_DIR="$PROJECT_DIR"
+        RUN_METHOD=vm
+    elif docker_exists; then
+        TARGET_DIR="/data"
+        RUN_METHOD=docker
+    else
+        log_error "Couldn't find gem5.opt"
+    fi
+    TARGET_RUN_DIR="$TARGET_DIR/$RUN_DIR"
+}
+
 
 
 next_dir() {
@@ -77,58 +156,6 @@ next_dir() {
     fi
 
     echo "${TARGET_DIR}/${PREFIX}${next_num}"
-}
-
-_setConfigArgs() {
-    while [ "${1:-}" != '' ]; do
-        case "$1" in
-            ## Options
-            
-            ## end of Options
-            [!-]*)
-                break
-                ;;
-            *)
-                log "$WARN" "Unknown option \"$1\", ignoring" 0 
-            ;;
-        esac
-        shift
-    done
-}
-
-docker_exists() {
-    {
-        { docker image ls --filter reference="$IMAGE_NAME" --format "{{.Repository}}:{{.Tag}}" | grep --line-regexp -q "$IMAGE_NAME"; } > /dev/null 2>&1
-    } && { run_docker [ -f "$DOCKER_GEM5" ]; }
-}
-
-host_dir()   { echo "${PROJECT_DIR}${1+"/$1"}"; }
-target_dir() { echo "${TARGET_DIR}${1+"/$1"}"; }
-
-set_env() {
-    IMAGE_NAME=orgb:latest
-    DOCKER_GEM5="/opt/gem5/build/X86/gem5.opt"
-    VM_GEM5="/home/orgb/gem5/build/X86/gem5.opt"
-    EXEC_PREFIX=()
-
-    RUN_DIR="$(next_dir .run)"
-    mkdir -p "$RUN_DIR"
-    echo i live on "$RUN_DIR"
-
-    if [ -f "$VM_GEM5" ] ; then
-        EXEC="$VM_GEM5"
-        TARGET_DIR="$PROJECT_DIR"
-    elif docker_exists; then
-        EXEC="$DOCKER_GEM5"
-        TARGET_DIR="/data"
-        EXEC_PREFIX+=("run_docker")
-    else
-        log_error "Couldn't find gem5.opt"
-    fi
-
-    chud_CMD=(chud -o "100")
-    radix_CMD=(radix)
-    cha_CMD=("cha")
 }
 
 SCRIPT_DIR=$(dirname "$(readlink -e "${BASH_SOURCE[0]}")") && source "$SCRIPT_DIR/util.bash"
