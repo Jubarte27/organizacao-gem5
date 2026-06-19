@@ -4,14 +4,19 @@ from scipy.stats import qmc
 from futypes import FUTypes
 
 VARIABLES = {
-    "pipelineWidth": (2, 8),
-    "numROBEntries": (64, 256),
-    "numIQEntries": (32, 96),
-    "intAluCount": (2, 6),
-    "fpAluCount": (1, 4),
-    "memPortsCount": (1, 3),
-    "numPhysIntRegs" : (96, 144),
-    "numPhysFloatRegs": (96, 144),
+    # "intLat": (1, 4),
+    # "fpLat": (1, 4),
+    "pipelineWidth": [2, 4, 8],
+    "numROBEntries": [64, 128, 256],
+    "numIQEntries": [32, 64, 96],
+    "intAluCount": [2, 4, 8],
+    "fpAluCount": [1, 2, 4],
+    "memPortsCount": [1, 2, 3],
+    "numPhysIntRegs" : [96, 128, 144],
+    "numPhysFloatRegs": [96, 128, 144],
+
+    "sizeL1": [32, 64, 128],
+    "assoc": [8, 16, 32],
 }
 
 NUM_EXPERIMENTS = 20
@@ -58,8 +63,25 @@ def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
     for idx, config in enumerate(configs):
         width = config["pipelineWidth"]
         
+        cache_entry = {
+            
+            "sizeL1": [8, 16, 32, 64, 128],
+            "mshrs": [8, 16, 32],
+            "assoc": [8, 16, 32],
+            
+        }
+        cache_latency = 1 << (VARIABLES["sizeL1"].index(config['sizeL1']) + VARIABLES["assoc"].index(config['assoc']))
         cpu_entry = {
             "name": f"CPU{idx + 1}",
+            "cache": {
+                "size": f'{config['sizeL1']}kB',
+                "assoc": str(config['assoc']),
+                "tag_latency": cache_latency,
+                "data_latency": cache_latency,
+                "response_latency": 1,
+                "mshrs": 4,
+                "tgts_per_mshr": 16,
+            },
             "attributes": {
                 "fetchWidth": str(width),
                 "decodeWidth": str(width),

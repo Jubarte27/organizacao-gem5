@@ -11,37 +11,34 @@ main() {
     mkdir -p "$RUNS_ROOT/build"
     run_on_target "$TARGET_DIR/compile.sh" "$TARGET_DIR/$(realpath --relative-to="$PROJECT_DIR" "$RUNS_ROOT/build")"
 
-    for py_file in "$CPUS_DIR"/*.py; do
-        base_name=$(basename "$py_file" .py)
-
-        if [ "$base_name" = "CPUBase" ]; then continue; fi
-        current_run_dir="$RUNS_ROOT/$base_name"
-        local relative_dir;
-        relative_dir="$(realpath --relative-to="$PROJECT_DIR" "$current_run_dir")"
+    for dir in "$CPUS_DIR"/CPU*/; do
+        current_run_dir="$RUNS_ROOT/$(basename "$dir")"
         
         mkdir -p "$current_run_dir"
 
         cp -r "$RUNS_ROOT/build/." "$current_run_dir/"
         cp -r "$HOST_DIR/orgb_configs" "$current_run_dir/orgb_configs"
 
-        copied_config_file="$current_run_dir/orgb_configs/systems/cpus/CPUBase.py"
-        cp "$py_file" "$copied_config_file"
-        sed -i "s/$base_name/CPUBase/gI" "$copied_config_file"
+        cp "$dir/CPUBase.py" "$current_run_dir/orgb_configs/systems/cpus/CPUBase.py"
+        cp "$dir/basic_caches.py" "$current_run_dir/orgb_configs/systems/caches/basic_caches.py"
 
         for algo in "${algorithms[@]}"; do prepare "$algo"; done
 
-        run "$relative_dir" &
+        run "$(realpath --relative-to="$PROJECT_DIR" "$current_run_dir")" &
     done
 
     echo "wating..."
-    wait
+    if ! wait; then
+        echo "Error: One or more child processes failed!"
+        exit 1
+    fi
     echo "done."
 }
 
 run() {
     local relative_dir=$1
     for algo in radix chud cha; do
-        echo "starting $algo on $dir"
+        echo "starting $algo on $relative_dir"
         local cmd
         algorithm_cmd cmd "$algo" "$TARGET_DIR/$relative_dir"
 
@@ -63,8 +60,8 @@ gem5() {
 
 run_on_target() {
     case "$RUN_METHOD" in
-        vm)     "$@" ;;
-        docker) run_docker "$@" ;;
+        vm)     if ! "$@"; then exit 1; fi ;;
+        docker) if ! run_docker "$@"; then exit 1; fi ;;
         *)      log_error "Run set_env before calling me" ;;
     esac
 }
