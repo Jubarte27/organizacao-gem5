@@ -1,0 +1,12 @@
+{
+  "pipelineWidth": 2,
+  "numROBEntries": 64,
+  "numIQEntries": 32,
+  "intAluCount": 2,
+  "fpAluCount": 1,
+  "memPortsCount": 3,
+  "numPhysIntRegs": 96,
+  "numPhysFloatRegs": 96,
+  "sizeL1": 32,
+  "assoc": 8
+}

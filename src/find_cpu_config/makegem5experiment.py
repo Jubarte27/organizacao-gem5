@@ -54,22 +54,11 @@ def generate_lhs_samples(variables: dict, num_samples: int) -> list[dict]:
     return experimental_configs
 
 def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
-    """
-    Transforms the compiled flat configurations to match the structural
-    template schema required by the downstream parsing script.
-    """
     cpu_json_list = []
     
     for idx, config in enumerate(configs):
         width = config["pipelineWidth"]
-        
-        cache_entry = {
-            
-            "sizeL1": [8, 16, 32, 64, 128],
-            "mshrs": [8, 16, 32],
-            "assoc": [8, 16, 32],
-            
-        }
+
         cache_latency = 1 << (VARIABLES["sizeL1"].index(config['sizeL1']) + VARIABLES["assoc"].index(config['assoc']))
         cpu_entry = {
             "name": f"CPU{idx + 1}",

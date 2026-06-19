@@ -33,6 +33,8 @@ main() {
         exit 1
     fi
     echo "done."
+
+    # run_on_target chown -R 
 }
 
 run() {
@@ -85,8 +87,8 @@ prepare() {
     esac
 }
 
-run_docker()        { docker run --rm -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data $IMAGE_NAME "${@}"; }
-run_docker_orgb()   { docker run --rm -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data orgb:latest "${@}"; }
+run_docker()        { docker run --rm -u "$(id -u):$(id -g)" -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data $IMAGE_NAME "${@}"; }
+run_docker_orgb()   { docker run --rm -u "$(id -u):$(id -g)" -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data orgb:latest "${@}"; }
 
 
 _setConfigArgs() {

@@ -14,7 +14,8 @@ main() {
 
     
     # for cpu in CPUBase; do
-    for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUBigROB; do
+    for cpu in MyO3CPU; do
+    # for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUBigROB; do
         mkdir -p "$HOST_RUN_DIR/$cpu"
         for algo in "${algorithms[@]}"; do
             run "$cpu" "$algo" &
