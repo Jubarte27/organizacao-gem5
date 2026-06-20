@@ -58,6 +58,7 @@ def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
     
     for idx, config in enumerate(configs):
         width = config["pipelineWidth"]
+        memLat = config["memLat"] if "memLat" in config else 1
 
         cache_latency = 1 << (VARIABLES["sizeL1"].index(config['sizeL1']) + VARIABLES["assoc"].index(config['assoc']))
         cpu_entry = {
@@ -105,9 +106,9 @@ def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
                     "type": FUTypes.MemUnit,
                     "count": int(config["memPortsCount"]),
                     "opList": [
-                        { "name": "MemRead", "lat": 1, "pipelined": True },
-                        { "name": "MemWrite", "lat": 1, "pipelined": True },
-                        { "name": "IprAccess", "lat": 1, "pipelined": True }
+                        { "name": "MemRead", "lat": memLat, "pipelined": True },
+                        { "name": "MemWrite", "lat": memLat, "pipelined": True },
+                        { "name": "IprAccess", "lat": memLat, "pipelined": True }
                     ]
                 }
             ]

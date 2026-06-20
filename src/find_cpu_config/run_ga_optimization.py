@@ -64,13 +64,13 @@ def mutate(individual):
                 individual[var] = random.choice(cfg["range"])
     return individual
 
-def build_cpus_json(population: list[dict[str, int | float]]):
+def build_cpus_json(population: list[dict[str, int | float | str]]):
     cpu_json_list = map_to_gem5_schema(population)
         
     with open(CPUS_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(cpu_json_list, f, indent=2)
 
-def calculate_fitness(run_dir: Path, config: dict[str, int | float]):
+def calculate_fitness(run_dir: Path, config):
     algos    = ("radix"  , "cha"    , "chud")
     baseline = (0.379127 , 0.909584 , 0.276885)
     
@@ -108,13 +108,16 @@ def calculate_fitness(run_dir: Path, config: dict[str, int | float]):
     
     return (weights * (IPC ** 2)) / cost, IPC
 
-def run_generation(population: list[dict[str, int | float]], gen_num: int) -> tuple[list[float], list[float]]:
+# population: list[dict[str, int | float | str]]
+def run_generation(population, gen_num: int) -> tuple[list[float], list[float]]:
     """Executes the full pipeline for the current generation."""
     print(f"\n========== GENERATION {gen_num} ==========")
     
     if os.path.exists(WORKSPACE):
         shutil.rmtree(WORKSPACE)
     os.makedirs(WORKSPACE)
+
+    names = [pop["name"] if "name" in pop else f"CPU{idx + 1}" for idx, pop in enumerate(population)]
     
     build_cpus_json(population)
 
@@ -123,33 +126,29 @@ def run_generation(population: list[dict[str, int | float]], gen_num: int) -> tu
     
     fitness_scores: list[float] = []
     ipcs: list[float] = []
-    for idx, config in enumerate(population):
-        run_name = f"CPU{idx + 1}" 
+    for i, config in enumerate(population):
+        run_name = f"CPU{i + 1}" 
         run_dir = WORKSPACE.joinpath("run", run_name)
         
         fit_score, ipc = calculate_fitness(run_dir, config)
         fitness_scores.append(fit_score)
         ipcs.append(ipc)
-        print(f"Ind {idx} | IPC: {ipc:.4f} | Fitness: {fit_score:.6f}")
+        print(f"Ind {i} | IPC: {ipc:.4f} | Fitness: {fit_score:.6f}")
+
+        # print(run_dir, run_dir.parent.joinpath(names[i]))
+        run_dir.rename(run_dir.parent.joinpath(names[i]))
         
     return fitness_scores, ipcs
 
-# =========================================================================
-# MAIN EXECUTION LOOP
-# =========================================================================
-
 if __name__ == "__main__":
-    # Initialize random population
     population = [generate_random_individual() for _ in range(POPULATION_SIZE)]
     
     best_config_overall = None
     best_fitness_overall = -1
     
     for generation in range(GENERATIONS):
-        # 1. Run Pipeline and Evaluate
         fitness_scores, ipcs = run_generation(population, generation)
         
-        # 2. Track best individual
         gen_best_idx = fitness_scores.index(max(fitness_scores))
         gen_best_fitness = fitness_scores[gen_best_idx]
         
