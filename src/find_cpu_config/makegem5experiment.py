@@ -7,16 +7,16 @@ VARIABLES = {
     # "intLat": (1, 4),
     # "fpLat": (1, 4),
     "pipelineWidth": [2, 4, 8],
-    "numROBEntries": [64, 128, 256],
+    "numROBEntries": [64, 128, 256, 512],
     "numIQEntries": [32, 64, 96],
-    "intAluCount": [2, 4, 8],
-    "fpAluCount": [1, 2, 4],
-    "memPortsCount": [1, 2, 3],
-    "numPhysIntRegs" : [96, 128, 144],
-    "numPhysFloatRegs": [96, 128, 144],
+    "intAluCount": [2, 4, 8, 16],
+    "fpAluCount": [1, 2, 4, 8],
+    "memPortsCount": [1, 2, 3, 4],
+    "numPhysIntRegs" : [96, 128, 144, 256],
+    "numPhysFloatRegs": [96, 128, 256],
 
     "sizeL1": [32, 64, 128],
-    "assoc": [8, 16, 32],
+    "assoc": [2, 4, 8, 16],
 }
 
 NUM_EXPERIMENTS = 20

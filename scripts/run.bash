@@ -56,9 +56,9 @@ run_on_target() {
 algorithm_cmd() {
     local -n _cmd=$1
     case "$2" in
-        cha)   _cmd=("$TARGET_RUN_DIR/cha") ;;
-        chud)  _cmd=("$TARGET_RUN_DIR/chud" -o "100") ;;
-        radix) _cmd=("$TARGET_RUN_DIR/radix") ;;
+        cha)   _cmd=("${3:-$TARGET_RUN_DIR}/cha") ;;
+        chud)  _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o "100") ;;
+        radix) _cmd=("${3:-$TARGET_RUN_DIR}/radix") ;;
         *)     log_error "Don't know $2" ;;
     esac
 }
@@ -72,8 +72,8 @@ prepare() {
     esac
 }
 
-run_docker()        { docker run --rm -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data $IMAGE_NAME "${@}"; }
-run_docker_orgb()   { docker run --rm -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data orgb:latest "${@}"; }
+run_docker()        { docker run --rm -u "$(id -u):$(id -g)" -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data $IMAGE_NAME "${@}"; }
+run_docker_orgb()   { docker run --rm -u "$(id -u):$(id -g)" -v "${DATA_DIR:-"$(pwd)"}:/data" -w /data orgb:latest "${@}"; }
 
 
 _setConfigArgs() {
@@ -158,8 +158,9 @@ next_dir() {
 
     echo "${TARGET_DIR}/${PREFIX}${next_num}"
 }
-
-SCRIPT_DIR=$(dirname "$(readlink -e "${BASH_SOURCE[0]}")") && source "$SCRIPT_DIR/util.bash"
-set_env
-_setConfigArgs "$@"
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    SCRIPT_DIR=$(dirname "$(readlink -e "${BASH_SOURCE[0]}")") && source "$SCRIPT_DIR/util.bash"
+    set_env
+    _setConfigArgs "$@"
+    main "$@"
+fi

@@ -31,9 +31,9 @@ def find_type(v) -> str:
 VARIABLES = {k: {"type": find_type(v), "range": v} for k, v in _VARIABLES.items()}
 
 # Directories
-WORKSPACE: Path = Path(sys.argv[1] if len(sys.argv)  > 1 else "./ga_workspace")
-CPUS_JSON_PATH: Path = WORKSPACE.joinpath("cpus.json")
 HERE: Path = Path(__file__).parent
+WORKSPACE: Path = Path(sys.argv[1]) if len(sys.argv)  > 1 else HERE.joinpath("./ga_workspace")
+CPUS_JSON_PATH: Path = WORKSPACE.joinpath("cpus.json")
 
 
 def generate_random_individual() -> dict[str, int | float]:
@@ -72,22 +72,24 @@ def build_cpus_json(population: list[dict[str, int | float]]):
 
 def calculate_fitness(run_dir: Path, config: dict[str, int | float]):
     algos    = ("radix"  , "cha"    , "chud")
-    baseline = (0.363218 , 0.080309 , 0.272368)
+    baseline = (0.379127 , 0.909584 , 0.276885)
     
     stats_files: list[Path] = [run_dir.joinpath(f"{algo}.m5out/stats.txt") for algo in  algos] # Adjust if gem5 outputs to m5out/stats.txt
     IPC = 0 # Default near-zero fitness if simulation fails
     # Extract IPC from stats.txt
     for base, stats_file in zip(baseline, stats_files):
-        ipc = 0.0001
-        if os.path.exists(stats_file):
-            with open(stats_file, 'r') as f:
-                for line in f:
-                    match = re.match(r'^\s*system\.cpu\.ipc\s+([0-9\.]+)', line)
-                    if match:
-                        ipc = float(match.group(1))
-                        break
-        IPC += (ipc / base)
+        ipc = -0.0001
+        with open(stats_file, 'r') as f:
+            for line in f:
+                match = re.match(r'^\s*system\.cpu\.ipc\s+([0-9\.]+)', line)
+                if match:
+                    ipc = float(match.group(1))
+                    break
+        if ipc < 0:
+            raise ValueError("Morri aaaaaaaa")
+        IPC += ipc
     IPC /= len(algos)
+    print(IPC)
 
     weights = 10 + 1 + 1 + 10 + 10 + 10 + 0.5 + 0.5 + 10 + 10
 
@@ -104,7 +106,7 @@ def calculate_fitness(run_dir: Path, config: dict[str, int | float]):
         ((1 << (int(config["assoc"]) // 8)) * 10)
     )
     
-    return IPC, IPC #(weights * (IPC ** 2)) / cost, IPC
+    return (weights * (IPC ** 2)) / cost, IPC
 
 def run_generation(population: list[dict[str, int | float]], gen_num: int) -> tuple[list[float], list[float]]:
     """Executes the full pipeline for the current generation."""
@@ -115,14 +117,14 @@ def run_generation(population: list[dict[str, int | float]], gen_num: int) -> tu
     os.makedirs(WORKSPACE)
     
     build_cpus_json(population)
-    
+
     subprocess.run(["python3", HERE.joinpath("makegem5test.py").absolute().as_posix(), CPUS_JSON_PATH.as_posix(), WORKSPACE.as_posix()])
     subprocess.run([HERE.joinpath("../../scripts/run_test_best_config.bash").absolute().as_posix(), WORKSPACE.as_posix()])
     
     fitness_scores: list[float] = []
     ipcs: list[float] = []
     for idx, config in enumerate(population):
-        run_name = f"CPU{idx}" 
+        run_name = f"CPU{idx + 1}" 
         run_dir = WORKSPACE.joinpath("run", run_name)
         
         fit_score, ipc = calculate_fitness(run_dir, config)

@@ -10,3 +10,58 @@
   "sizeL1": 32,
   "assoc": 8
 }
+
+{
+  "pipelineWidth": 4,
+  "numROBEntries": 128,
+  "numIQEntries": 96,
+  "intAluCount": 8,
+  "fpAluCount": 4,
+  "memPortsCount": 3,
+  "numPhysIntRegs": 128,
+  "numPhysFloatRegs": 144,
+  "sizeL1": 64,
+  "assoc": 32
+}
+
+chud:
+{
+  "pipelineWidth": 2,
+  "numROBEntries": 64,
+  "numIQEntries": 32,
+  "intAluCount": 2,
+  "fpAluCount": 1,
+  "memPortsCount": 1,
+  "numPhysIntRegs": 96,
+  "numPhysFloatRegs": 128,
+  "sizeL1": 32,
+  "assoc": 8
+}
+
+cha:
+{
+  "pipelineWidth": 2,
+  "numROBEntries": 64,
+  "numIQEntries": 64,
+  "intAluCount": 2,
+  "fpAluCount": 1,
+  "memPortsCount": 1,
+  "numPhysIntRegs": 96,
+  "numPhysFloatRegs": 96,
+  "sizeL1": 32,
+  "assoc": 8
+}
+
+radix:
+{
+  "pipelineWidth": 2,
+  "numROBEntries": 64,
+  "numIQEntries": 32,
+  "intAluCount": 2,
+  "fpAluCount": 1,
+  "memPortsCount": 1,
+  "numPhysIntRegs": 128,
+  "numPhysFloatRegs": 96,
+  "sizeL1": 32,
+  "assoc": 8
+}
