@@ -20,7 +20,8 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${RUN_DIR}")
 
 link_directories("${CMAKE_CURRENT_SOURCE_DIR}/ext/lib")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/ext/include")
+# deveria ser CMAKE_CURRENT_SOURCE_DIR ao inves de CMAKE_RUNTIME_OUTPUT_DIRECTORY, mas fica mais fácil de testar assim
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/ext/include" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
 add_executable(radix radix.c)
 set_target_properties(radix PROPERTIES LINK_FLAGS "-static")
@@ -31,6 +32,7 @@ set_target_properties(chud PROPERTIES LINK_FLAGS "-static")
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/beemovie.fodase" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 file(RENAME "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/beemovie.fodase" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cha.in")
+file(COPY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cha.in" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_executable(cha cha.c)
 set_target_properties(cha PROPERTIES LINK_FLAGS "-static")

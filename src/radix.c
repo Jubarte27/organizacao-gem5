@@ -1,13 +1,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include "big_array.h"
 
-#define radix 10
 #define arr big_array
 #define n big_array_len
+// uint32_t * arr = NULL;
+// uint32_t n = 0;
+
+#define radix 10
 #define n_byte n * sizeof(int)
 
 #define swap(a, b) do {__typeof__(a) _tmp = (a); a = b; b = _tmp;} while (0)
@@ -35,6 +43,18 @@ void fast_print_ints(FILE *stream) {
 }
 
 int main() {
+    // mmap parece quebrar alguma coisa na simulação, triste
+    // int fd = open("big_array.bin", O_RDONLY);
+    // if (fd < 0) return 42;
+
+    // struct stat st;
+    // if (fstat(fd, &st) < 0) return 42;
+
+    // // fread usa memset, memset usa movntdq, movntdq não está implementado no processador
+    // arr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    // if (arr == MAP_FAILED) return 42;
+    // n = st.st_size;
+
     radix_sort();
     // Write to a file only when we need to verify. Printing takes as much time as sorting, so it defeats the purpose of tests (we're not trying to test printf)
     // FILE *f = fopen("radix.out", "w");

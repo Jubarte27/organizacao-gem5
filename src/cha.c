@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "cha.in.h"
+
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 // #define CH(x, y, z) (((x) & (y)) ^ (~(x) & (z)))
 // #define MAJ(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
@@ -124,20 +126,25 @@ void cha256_to_hex(const uint8_t hash[32], char hex[65]) {
 }
 
 int main(int argc, char** argv) {
-    int fd = open("cha.in", O_RDONLY);
-    if (fd < 0) return 42;
+    // mmap quebra alguma coisa na simulacao
+    // int fd = open("cha.in", O_RDONLY);
+    // if (fd < 0) return 42;
 
-    struct stat st;
-    if (fstat(fd, &st) < 0) return 42;
+    // struct stat st;
+    // if (fstat(fd, &st) < 0) return 42;
 
-    // fread usa memset, memset usa movntdq, movntdq não está implementado no processador
-    uint8_t* buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (buffer == MAP_FAILED) return 42;
+    // // fread usa memset, memset usa movntdq, movntdq não está implementado no processador
+    // const uint8_t* buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    // if (buffer == MAP_FAILED) return 42;
+    // size_t s = st.st_size;
+
+    const uint8_t * buffer = cha_input;
+    size_t s = cha_input_len;
     
     uint8_t hash[32];
     char hex[65];
     
-    cha256(buffer, st.st_size, hash);
+    cha256(buffer, s, hash);
     cha256_to_hex(hash, hex);
     printf("CHA-256: %s\n", hex);
     return 0;

@@ -8,14 +8,13 @@ main() {
     local algorithms=(cha chud radix)
 
     cp -r "$HOST_DIR/orgb_configs" "$HOST_RUN_DIR/orgb_configs"
-    run_on_target "$TARGET_DIR/compile.sh" "$TARGET_RUN_DIR"
-
     for algo in "${algorithms[@]}"; do prepare "$algo"; done
+    run_on_target "$TARGET_DIR/compile.sh" "$TARGET_RUN_DIR"
 
     
     # for cpu in CPUBase; do
-    for cpu in MyO3CPU; do
-    # for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUBigROB; do
+    # for cpu in MyO3CPU; do
+    for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUMoreInt; do
         mkdir -p "$HOST_RUN_DIR/$cpu"
         for algo in "${algorithms[@]}"; do
             run "$cpu" "$algo" &
@@ -66,7 +65,7 @@ algorithm_cmd() {
 
 prepare() {
     case "$1" in
-        cha)   ;;
+        cha)   python3 "$HOST_DIR/src/make_cha_data.py" "$HOST_RUN_DIR/cha.in.h" "$HOST_DIR/src/cha.c";;
         chud)  ;;
         radix) python3 "$HOST_DIR/src/make_data.py" 8 10 "$HOST_RUN_DIR/radix.big_array.h" ;;
         *)     log_error "Don't know $1" ;;
