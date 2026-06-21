@@ -56,9 +56,10 @@ run_on_target() {
 algorithm_cmd() {
     local -n _cmd=$1
     case "$2" in
-        cha)   _cmd=("${3:-$TARGET_RUN_DIR}/cha") ;;
-        chud)  _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o "530") ;;
-        radix) _cmd=("${3:-$TARGET_RUN_DIR}/radix") ;;
+        # black)   _cmd=("${3:-$TARGET_RUN_DIR}/black") ;;
+        cha)     _cmd=("${3:-$TARGET_RUN_DIR}/cha") ;;
+        chud)    _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o "530") ;;
+        radix)   _cmd=("${3:-$TARGET_RUN_DIR}/radix") ;;
         *)     log_error "Don't know $2" ;;
     esac
 }
@@ -66,6 +67,7 @@ algorithm_cmd() {
 # Completely useles, by the way. Will not remove though
 prepare() {
     case "$1" in
+        # black) python3 "$HOST_DIR/src/make_data_black.py" 64 "$HOST_RUN_DIR/black.in.h" ;;
         cha)   python3 "$HOST_DIR/src/make_cha_data.py" "$HOST_RUN_DIR/cha.in.h" "$HOST_DIR/src/cha.c";;
         chud)  ;;
         radix) python3 "$HOST_DIR/src/make_data.py" 10 12.84 "$HOST_RUN_DIR/big_array.h" ;;

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import cast
 from makegem5experiment import map_to_gem5_schema
 from makegem5test import make_cpu, make_cache
-from makegem5experiment import VARIABLES as _VARIABLES, getDefault
+from makegem5experiment import VARIABLES as _VARIABLES
 
 # =========================================================================
 # GA HYPERPARAMETERS & SEARCH SPACE
@@ -71,6 +71,7 @@ def build_cpus_json(population: list[dict[str, int | float | str]]):
         json.dump(cpu_json_list, f, indent=2)
 
 def calculate_fitness(run_dir: Path, config):
+    def getConfig(key: str, default): return config[key] if key in config else default
     algos    = ("radix"  , "cha"    , "chud")
     baseline = (0.379127 , 0.909584 , 0.276885)
     
@@ -94,25 +95,21 @@ def calculate_fitness(run_dir: Path, config):
     weights = 10 + 1 + 1 + 10 + 10 + 10 + 0.5 + 0.5 + 10 + 10
 
     cost = (
-        (getDefault(config, "pipelineWidth", 2) * 10) +
-        (getDefault(config, "numROBEntries", 96) * 1) +
-        (getDefault(config, "numIQEntries", 32) * 1) +
-        (getDefault(config, "intAluCount", 2) * 10) +
-        (getDefault(config, "fpAluCount", 1) * 10) + 
-        (getDefault(config, "memPortsCount", 1) * 10) +
-        (getDefault(config, "numPhysIntRegs", 96) * 0.5) +
-        (getDefault(config, "numPhysFloatRegs", 96) * 0.5) +
-        ((1 << (int(getDefault(config, "sizeL1", 32)) // 32)) * 10) +
-        ((1 << (int(getDefault(config, "assoc", 8)) // 8)) * 10)
+        (getConfig("pipelineWidth", 2) * 10) +
+        (getConfig("numROBEntries", 96) * 1) +
+        (getConfig("numIQEntries", 32) * 1) +
+        (getConfig("intAluCount", 2) * 10) +
+        (getConfig("fpAluCount", 1) * 10) + 
+        (getConfig("memPortsCount", 1) * 10) +
+        (getConfig("numPhysIntRegs", 96) * 0.5) +
+        (getConfig("numPhysFloatRegs", 96) * 0.5) +
+        ((1 << (int(getConfig("sizeL1", 32)) // 32)) * 10) +
+        ((1 << (int(getConfig("assoc", 8)) // 8)) * 10)
     )
     
     return (weights * (IPC ** 2)) / cost, IPC
 
-# population: list[dict[str, int | float | str]]
-def run_generation(population, gen_num: int) -> tuple[list[float], list[float]]:
-    """Executes the full pipeline for the current generation."""
-    print(f"\n========== GENERATION {gen_num} ==========")
-    
+def simulate_generation(population):
     if os.path.exists(WORKSPACE):
         shutil.rmtree(WORKSPACE)
     os.makedirs(WORKSPACE)
@@ -123,20 +120,28 @@ def run_generation(population, gen_num: int) -> tuple[list[float], list[float]]:
 
     subprocess.run(["python3", HERE.joinpath("makegem5test.py").absolute().as_posix(), CPUS_JSON_PATH.as_posix(), WORKSPACE.as_posix()])
     subprocess.run([HERE.joinpath("../../scripts/run_test_best_config.bash").absolute().as_posix(), WORKSPACE.as_posix()])
+
+    
+    for i, config in enumerate(population):
+        run_dir = WORKSPACE.joinpath("run", f"CPU{i + 1}")
+        run_dir.rename(run_dir.parent.joinpath(names[i]))
+
+# population: list[dict[str, int | float | str]]
+def run_generation(population, gen_num: int) -> tuple[list[float], list[float]]:
+    print(f"\n========== GENERATION {gen_num} ==========")
+    
+    simulate_generation(population)
+    names = [pop["name"] if "name" in pop else f"CPU{idx + 1}" for idx, pop in enumerate(population)]
     
     fitness_scores: list[float] = []
     ipcs: list[float] = []
     for i, config in enumerate(population):
-        run_name = f"CPU{i + 1}" 
-        run_dir = WORKSPACE.joinpath("run", run_name)
+        run_dir = WORKSPACE.joinpath("run", names[i])
         
         fit_score, ipc = calculate_fitness(run_dir, config)
         fitness_scores.append(fit_score)
         ipcs.append(ipc)
         print(f"Ind {i} | IPC: {ipc:.4f} | Fitness: {fit_score:.6f}")
-
-        # print(run_dir, run_dir.parent.joinpath(names[i]))
-        run_dir.rename(run_dir.parent.joinpath(names[i]))
         
     return fitness_scores, ipcs
 

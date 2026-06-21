@@ -7,7 +7,7 @@ import subprocess
 import sys
 from makegem5experiment import VARIABLES, map_to_gem5_schema
 from makegem5test import parse_and_generate_cpus
-from run_ga_optimization import run_generation
+from run_ga_optimization import simulate_generation
 
 fixed_config: dict[str, int | float | str] = {
     "name": "baseline",
@@ -21,33 +21,30 @@ fixed_config: dict[str, int | float | str] = {
     "numPhysIntRegs": 96,
     "numPhysFloatRegs": 96,
 
+    "tagLatency": 1,
+    "dataLatency": 2,
     "sizeL1": 32,
     "assoc": 8,
 }
 
+## horrível, mas fica assim por enquanto
+def vary_cache(config: dict[str, int | float | str], value: int | float | str):
+    varied_cache = config.copy()
+    varied_cache["sizeL1"] = value
+    return varied_cache
+
+def vary_name(config: dict[str, int | float | str], name: str):
+    varied = config.copy()
+    varied["name"] = name
+    return varied
+
 def main():
-    WorseMem = fixed_config.copy()
-    WorseMem["memLat"] = 8
-    WorseMem["name"] = "WorseMem"
+    raw_configs = [fixed_config,
+                   *(vary_name(vary_cache(fixed_config, f'{n}B'), f"VaryCache{n}B") for n in (512, 1024)),
+                   *(vary_name(vary_cache(fixed_config, n), f"VaryCache{n}kB") for n in (2, 4, 8, 16, 32))
+    ]
 
-    MoreInt = fixed_config.copy()
-    
-    MoreInt["intAluCount"] = 4
-    MoreInt["intAluLat"] = 1
-    # MoreInt["SIMDCount"] = 4
-    # MoreInt["SIMDLat"] = 1
-    MoreInt["name"] = "MoreInt"
-
-    MoreFp = fixed_config.copy()
-    MoreFp["sizeL1"] = 1024
-    MoreFp["assoc"] = 32
-    MoreFp["name"] = "HugeCache"
-
-    raw_configs = [fixed_config, WorseMem, MoreInt, MoreFp]
-
-    run_generation(raw_configs, 1)
-
-
+    simulate_generation(raw_configs)
 
 if __name__ == "__main__":
     main()

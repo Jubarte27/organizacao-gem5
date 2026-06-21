@@ -26,6 +26,10 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/ext/include" "${CMAKE_RUNTIME_O
 add_executable(radix radix.c)
 set_target_properties(radix PROPERTIES LINK_FLAGS "-static")
 
+add_executable(black black.c)
+target_link_libraries(black PRIVATE m)
+set_target_properties(radix PROPERTIES LINK_FLAGS "-static")
+
 add_executable(chud chud.c)
 target_link_libraries(chud PRIVATE gmp)
 set_target_properties(chud PROPERTIES LINK_FLAGS "-static")
