@@ -2,15 +2,16 @@ import random
 import sys
 from pathlib import Path
 import struct
+from math import floor
 
 if len(sys.argv) > 3:
     target = sys.argv[3]
 else:
     target = Path(__file__).resolve().parent.joinpath("big_array.h").as_posix()
 
-max_int = 1 << (16 if len(sys.argv) <= 1 else int(sys.argv[1]))
-n_bytes = 1 << (20 if len(sys.argv) <= 2 else int(sys.argv[2]))
-ints = [random.randint(0, max_int) for _ in range(n_bytes >> 2)]
+max_int = floor(2 ** (16 if len(sys.argv) <= 1 else float(sys.argv[1])))
+n_bytes = floor(2 ** (20 if len(sys.argv) <= 2 else float(sys.argv[2])))
+ints = [random.randint(0, max_int) for _ in range(n_bytes // 4)]
 
 format_string = f"@{len(ints)}I" 
 with open(f'{target.removesuffix(".h")}.bin', "wb") as f:

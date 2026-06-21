@@ -57,17 +57,18 @@ algorithm_cmd() {
     local -n _cmd=$1
     case "$2" in
         cha)   _cmd=("${3:-$TARGET_RUN_DIR}/cha") ;;
-        chud)  _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o "100") ;;
+        chud)  _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o "530") ;;
         radix) _cmd=("${3:-$TARGET_RUN_DIR}/radix") ;;
         *)     log_error "Don't know $2" ;;
     esac
 }
 
+# Completely useles, by the way. Will not remove though
 prepare() {
     case "$1" in
         cha)   python3 "$HOST_DIR/src/make_cha_data.py" "$HOST_RUN_DIR/cha.in.h" "$HOST_DIR/src/cha.c";;
         chud)  ;;
-        radix) python3 "$HOST_DIR/src/make_data.py" 8 10 "$HOST_RUN_DIR/radix.big_array.h" ;;
+        radix) python3 "$HOST_DIR/src/make_data.py" 10 12.84 "$HOST_RUN_DIR/big_array.h" ;;
         *)     log_error "Don't know $1" ;;
     esac
 }

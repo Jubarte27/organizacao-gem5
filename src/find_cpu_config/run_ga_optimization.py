@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import cast
 from makegem5experiment import map_to_gem5_schema
 from makegem5test import make_cpu, make_cache
-from makegem5experiment import VARIABLES as _VARIABLES
+from makegem5experiment import VARIABLES as _VARIABLES, getDefault
 
 # =========================================================================
 # GA HYPERPARAMETERS & SEARCH SPACE
@@ -94,16 +94,16 @@ def calculate_fitness(run_dir: Path, config):
     weights = 10 + 1 + 1 + 10 + 10 + 10 + 0.5 + 0.5 + 10 + 10
 
     cost = (
-        (config["pipelineWidth"] * 10) +
-        (config["numROBEntries"] * 1) +
-        (config["numIQEntries"] * 1) +
-        (config["intAluCount"] * 10) +
-        (config["fpAluCount"] * 10) + 
-        (config["memPortsCount"] * 10) +
-        (config["numPhysIntRegs"] * 0.5) +
-        (config["numPhysFloatRegs"] * 0.5) +
-        ((1 << (int(config["sizeL1"]) // 32)) * 10) +
-        ((1 << (int(config["assoc"]) // 8)) * 10)
+        (getDefault(config, "pipelineWidth", 2) * 10) +
+        (getDefault(config, "numROBEntries", 96) * 1) +
+        (getDefault(config, "numIQEntries", 32) * 1) +
+        (getDefault(config, "intAluCount", 2) * 10) +
+        (getDefault(config, "fpAluCount", 1) * 10) + 
+        (getDefault(config, "memPortsCount", 1) * 10) +
+        (getDefault(config, "numPhysIntRegs", 96) * 0.5) +
+        (getDefault(config, "numPhysFloatRegs", 96) * 0.5) +
+        ((1 << (int(getDefault(config, "sizeL1", 32)) // 32)) * 10) +
+        ((1 << (int(getDefault(config, "assoc", 8)) // 8)) * 10)
     )
     
     return (weights * (IPC ** 2)) / cost, IPC

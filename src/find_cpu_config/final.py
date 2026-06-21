@@ -18,9 +18,6 @@ fixed_config: dict[str, int | float | str] = {
     "intAluCount": 4,
     "fpAluCount": 2,
 
-    "memPortsCount": 1,
-    "memLat": 1,
-
     "numPhysIntRegs": 96,
     "numPhysFloatRegs": 96,
 
@@ -34,24 +31,21 @@ def main():
     WorseMem["name"] = "WorseMem"
 
     MoreInt = fixed_config.copy()
-    MoreInt["intAluCount"] = 8
+    
+    MoreInt["intAluCount"] = 4
+    MoreInt["intAluLat"] = 1
+    # MoreInt["SIMDCount"] = 4
+    # MoreInt["SIMDLat"] = 1
     MoreInt["name"] = "MoreInt"
 
     MoreFp = fixed_config.copy()
-    MoreFp["fpAluCount"] = 8
-    MoreFp["name"] = "MoreFp"
+    MoreFp["sizeL1"] = 1024
+    MoreFp["assoc"] = 32
+    MoreFp["name"] = "HugeCache"
 
     raw_configs = [fixed_config, WorseMem, MoreInt, MoreFp]
 
     run_generation(raw_configs, 1)
-
-    # formatted_cpus = map_to_gem5_schema(raw_configs)
-    
-    # output_filename = sys.argv[1] if len(sys.argv) > 1 else "cpus.json"
-    # with open(output_filename, "w", encoding="utf-8") as f:
-    #     json.dump(formatted_cpus, f, indent=2)
-
-    # parse_and_generate_cpus(output_filename)
 
 
 

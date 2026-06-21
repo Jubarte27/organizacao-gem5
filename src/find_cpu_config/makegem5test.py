@@ -59,7 +59,7 @@ from MyO3CPU import MyO3CPU, MyIntALU, MyIntMultDiv, My_FP_ALU, My_FP_MultDiv, M
             op_name = op.get("name")
             op_lat = op.get("lat", 1)
             op_pipelined = "True" if op.get("pipelined", True) else "False"
-            lines.append(f"        OpDesc(opClass='{op_name}', opLat={op_lat}, pipelined={op_pipelined}),")
+            lines.append(f"        OpDesc(opClass='{op_name}'{f", opLat={op_lat}" if op_lat != "default" else ""}, pipelined={op_pipelined}),")
         lines.append("    ]")
         lines.append(f"    count = {fu.get('count', 1)}\n")
 
