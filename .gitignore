@@ -9,3 +9,7 @@ src/build
 test_best_config
 __pycache__
 ga_workspace
+src/find_cpu_config/Cache
+src/find_cpu_config/MemRead
+src/find_cpu_config/CacheLatency
+src/find_cpu_config/IntRegs

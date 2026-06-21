@@ -88,6 +88,7 @@ def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
 
         tag_latency = getConfig('tagLatency', tag_latency)
         data_latency = getConfig('dataLatency', data_latency)
+        response_latency = getConfig('responseLatency', 2)
 
         cpu_entry = {
             "name": f"CPU{idx + 1}",
@@ -96,7 +97,7 @@ def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
                 "assoc": str(assoc),
                 "tag_latency": tag_latency,
                 "data_latency": data_latency,
-                "response_latency": 1,
+                "response_latency": response_latency,
                 "mshrs": 4,
                 "tgts_per_mshr": 16,
             },
@@ -177,12 +178,14 @@ def map_to_gem5_schema(configs: list[dict]) -> list[dict]:
                 {"name":'FloatSqrt', "lat": fpMultDivLat * 6, "pipelined":False},
             ])
 
-        if "memLat" in config or "memPortsCount" in config:
+        if any(k in config for k in ("memLat", "memPortsCount","MemReadLat","MemWriteLat")):
             memLat = getConfig("memLat", "default")
             memCount = int(getConfig("memPortsCount", 1))
+            memReadLat = getConfig("MemReadLat", memLat)
+            memWriteLat = getConfig("memWriteLat", memLat)
             addFU(FUTypes.MemUnit, memCount, [
-                { "name": "MemRead", "lat": memLat, "pipelined": True },
-                { "name": "MemWrite", "lat": memLat, "pipelined": True },
+                { "name": "MemRead", "lat": memReadLat, "pipelined": True },
+                { "name": "MemWrite", "lat": memWriteLat, "pipelined": True },
                 { "name": "IprAccess", "lat": memLat, "pipelined": True }
             ])
         cpu_json_list.append(cpu_entry)

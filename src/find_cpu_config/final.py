@@ -7,7 +7,7 @@ import subprocess
 import sys
 from makegem5experiment import VARIABLES, map_to_gem5_schema
 from makegem5test import parse_and_generate_cpus
-from run_ga_optimization import simulate_generation
+from run_ga_optimization import simulate_generation, HERE
 
 fixed_config: dict[str, int | float | str] = {
     "name": "baseline",
@@ -27,24 +27,35 @@ fixed_config: dict[str, int | float | str] = {
     "assoc": 8,
 }
 
-## horrível, mas fica assim por enquanto
-def vary_cache(config: dict[str, int | float | str], value: int | float | str):
-    varied_cache = config.copy()
-    varied_cache["sizeL1"] = value
-    return varied_cache
 
-def vary_name(config: dict[str, int | float | str], name: str):
+
+def vary1(config: dict[str, int | float | str], what: str, value: int | float | str):
     varied = config.copy()
-    varied["name"] = name
+    varied[what] = value
+    return varied
+
+def vary(config: dict[str, int | float | str], **kargs):
+    varied = config.copy()
+    for k, v in kargs.items():
+        varied[k] = v
     return varied
 
 def main():
-    raw_configs = [fixed_config,
-                   *(vary_name(vary_cache(fixed_config, f'{n}B'), f"VaryCache{n}B") for n in (512, 1024)),
-                   *(vary_name(vary_cache(fixed_config, n), f"VaryCache{n}kB") for n in (2, 4, 8, 16, 32))
-    ]
+    simulate_generation([
+        fixed_config,
+        *(vary(fixed_config, sizeL1=f'{n}B', name=f"Cache{n}B") for n in (512, 1024)),
+        *(vary(fixed_config, sizeL1=n, name=f"Cache{n}kB") for n in (2, 4, 8, 16))
+    ], HERE.joinpath("Cache"))
 
-    simulate_generation(raw_configs)
+    simulate_generation([
+        fixed_config,
+        *(vary(fixed_config, MemReadLat=n, name=f"MemRead{n}") for n in (2, 4, 8, 16))
+    ], HERE.joinpath("MemRead"))
+
+    simulate_generation([
+        fixed_config,
+        *(vary(fixed_config, numPhysIntRegs=n, name=f"IntRegs{n}") for n in (64, 128, 256, 512, 1024))
+    ], HERE.joinpath("IntRegs"))
 
 if __name__ == "__main__":
     main()

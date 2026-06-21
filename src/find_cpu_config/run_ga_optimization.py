@@ -32,8 +32,7 @@ VARIABLES = {k: {"type": find_type(v), "range": v} for k, v in _VARIABLES.items(
 
 # Directories
 HERE: Path = Path(__file__).parent
-WORKSPACE: Path = Path(sys.argv[1]) if len(sys.argv)  > 1 else HERE.joinpath("./ga_workspace")
-CPUS_JSON_PATH: Path = WORKSPACE.joinpath("cpus.json")
+DEFAULT_WORKSPACE: Path = Path(sys.argv[1]) if len(sys.argv)  > 1 else HERE.joinpath("./ga_workspace")
 
 
 def generate_random_individual() -> dict[str, int | float]:
@@ -64,10 +63,10 @@ def mutate(individual):
                 individual[var] = random.choice(cfg["range"])
     return individual
 
-def build_cpus_json(population: list[dict[str, int | float | str]]):
+def build_cpus_json(population: list[dict[str, int | float | str]], json_path: Path):
     cpu_json_list = map_to_gem5_schema(population)
         
-    with open(CPUS_JSON_PATH, "w", encoding="utf-8") as f:
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(cpu_json_list, f, indent=2)
 
 def calculate_fitness(run_dir: Path, config):
@@ -109,21 +108,22 @@ def calculate_fitness(run_dir: Path, config):
     
     return (weights * (IPC ** 2)) / cost, IPC
 
-def simulate_generation(population):
-    if os.path.exists(WORKSPACE):
-        shutil.rmtree(WORKSPACE)
-    os.makedirs(WORKSPACE)
+def simulate_generation(population, workspace=DEFAULT_WORKSPACE):
+    if os.path.exists(workspace):
+        shutil.rmtree(workspace)
+    os.makedirs(workspace)
 
     names = [pop["name"] if "name" in pop else f"CPU{idx + 1}" for idx, pop in enumerate(population)]
     
-    build_cpus_json(population)
+    json_path: Path = DEFAULT_WORKSPACE.joinpath("cpus.json")
+    build_cpus_json(population, json_path)
 
-    subprocess.run(["python3", HERE.joinpath("makegem5test.py").absolute().as_posix(), CPUS_JSON_PATH.as_posix(), WORKSPACE.as_posix()])
-    subprocess.run([HERE.joinpath("../../scripts/run_test_best_config.bash").absolute().as_posix(), WORKSPACE.as_posix()])
+    subprocess.run(["python3", HERE.joinpath("makegem5test.py").absolute().as_posix(), json_path.as_posix(), workspace.as_posix()])
+    subprocess.run([HERE.joinpath("../../scripts/run_test_best_config.bash").absolute().as_posix(), workspace.as_posix()])
 
     
     for i, config in enumerate(population):
-        run_dir = WORKSPACE.joinpath("run", f"CPU{i + 1}")
+        run_dir = workspace.joinpath("run", f"CPU{i + 1}")
         run_dir.rename(run_dir.parent.joinpath(names[i]))
 
 # population: list[dict[str, int | float | str]]
@@ -136,7 +136,7 @@ def run_generation(population, gen_num: int) -> tuple[list[float], list[float]]:
     fitness_scores: list[float] = []
     ipcs: list[float] = []
     for i, config in enumerate(population):
-        run_dir = WORKSPACE.joinpath("run", names[i])
+        run_dir = DEFAULT_WORKSPACE.joinpath("run", names[i])
         
         fit_score, ipc = calculate_fitness(run_dir, config)
         fitness_scores.append(fit_score)

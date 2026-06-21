@@ -10,6 +10,7 @@ main() {
 
     mkdir -p "$RUN_DIR"
     mkdir -p "$RUN_DIR/build"
+    for algo in "${algorithms[@]}"; do prepare "$algo"; done
     run_on_target "$TARGET_DIR/compile.sh" "$TARGET_DIR/$(realpath --relative-to="$PROJECT_DIR" "$RUN_DIR/build")"
 
     for dir in "$CPUS_DIR"/CPU*/; do
@@ -22,8 +23,6 @@ main() {
 
         cp "$dir/CPUBase.py" "$current_run_dir/orgb_configs_orig/systems/cpus/CPUBase.py"
         cp "$dir/basic_caches.py" "$current_run_dir/orgb_configs_orig/systems/caches/basic_caches.py"
-
-        for algo in "${algorithms[@]}"; do prepare "$algo"; done
 
         run "$(realpath --relative-to="$PROJECT_DIR" "$current_run_dir")" &
     done
