@@ -24,7 +24,7 @@ main() {
         cp "$dir/CPUBase.py" "$current_run_dir/orgb_configs_orig/systems/cpus/CPUBase.py"
         cp "$dir/basic_caches.py" "$current_run_dir/orgb_configs_orig/systems/caches/basic_caches.py"
 
-        run "$(realpath --relative-to="$PROJECT_DIR" "$current_run_dir")" &
+        run "$(realpath --relative-to="$PROJECT_DIR" "$current_run_dir")"
     done
 
     echo "wating..."
@@ -34,18 +34,25 @@ main() {
     fi
     echo "done."
 
-    # run_on_target chown -R 
+    # run_on_target chown -R
+}
+
+run_algo() {
+    local algo=$1
+    local relative_dir=$2
+
+    echo "starting $algo on $relative_dir"
+    local cmd
+    algorithm_cmd cmd "$algo" "$TARGET_DIR/$relative_dir"
+
+    gem5 --outdir="$TARGET_DIR/$relative_dir/$algo.m5out" "$relative_dir/orgb_configs_orig/simulate.py" --cpu "CPUBase" run-benchmark -c "${cmd[@]}" > "$PROJECT_DIR/$relative_dir/$algo.txt" 2>&1
+    echo "finished $algo on $dir"
 }
 
 run() {
     local relative_dir=$1
     for algo in radix chud cha; do
-        echo "starting $algo on $relative_dir"
-        local cmd
-        algorithm_cmd cmd "$algo" "$TARGET_DIR/$relative_dir"
-
-        gem5 --outdir="$TARGET_DIR/$relative_dir/$algo.m5out" "$relative_dir/orgb_configs_orig/simulate.py" --cpu "CPUBase" run-benchmark -c "${cmd[@]}" > "$PROJECT_DIR/$relative_dir/$algo.txt" 2>&1
-        echo "finished $algo on $dir"
+        run_algo "$algo" "$relative_dir" &
     done
 }
 

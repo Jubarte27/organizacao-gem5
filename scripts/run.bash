@@ -12,9 +12,9 @@ main() {
     run_on_target "$TARGET_DIR/compile.sh" "$TARGET_RUN_DIR"
 
     
-    # for cpu in CPUBase; do
+    for cpu in CPUBase; do
     # for cpu in MyO3CPU; do
-    for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUMoreInt; do
+    # for cpu in CPUBase CPUMoreMem CPUMoreFloat CPUMoreInt; do
         mkdir -p "$HOST_RUN_DIR/$cpu"
         for algo in "${algorithms[@]}"; do
             run "$cpu" "$algo" &
@@ -58,7 +58,7 @@ algorithm_cmd() {
     case "$2" in
         # black)   _cmd=("${3:-$TARGET_RUN_DIR}/black") ;;
         cha)     _cmd=("${3:-$TARGET_RUN_DIR}/cha") ;;
-        chud)    _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o 3145) ;;
+        chud)    _cmd=("${3:-$TARGET_RUN_DIR}/chud" -o 14159) ;;
         radix)   _cmd=("${3:-$TARGET_RUN_DIR}/radix") ;;
         *)     log_error "Don't know $2" ;;
     esac
@@ -68,11 +68,11 @@ prepare() {
     case "$1" in
         # black) python3 "$HOST_DIR/src/make_data_black.py" 64 "$HOST_RUN_DIR/black.in.h" ;;
         cha)  
-            python3 "$HOST_DIR/src/make_cha_data.py" "$HOST_RUN_DIR/cha.in.h" "$HOST_DIR/src/beemovie.fodase"
+            python3 "$HOST_DIR/src/make_cha_data.py" "$HOST_RUN_DIR/cha.in.h" "$HOST_DIR/src/CapitalVolumeI.txt"
             cp "$HOST_RUN_DIR/cha.in.h" "$HOST_DIR/src/cha.in.h"
             ;;
         radix) 
-            python3 "$HOST_DIR/src/make_data.py" 16 16 "$HOST_RUN_DIR/big_array.h"
+            python3 "$HOST_DIR/src/make_data.py" 16 21 "$HOST_RUN_DIR/big_array.h"
             cp "$HOST_RUN_DIR/big_array.h" "$HOST_DIR/src/big_array.h"
             ;;
         chud) ;;

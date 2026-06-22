@@ -43,18 +43,18 @@ def vary(config: dict[str, int | float | str], **kargs):
 def main():
     simulate_generation([
         fixed_config,
-        *(vary(fixed_config, sizeL1=f'{n}B', name=f"Cache{n}B") for n in (512, 1024)),
-        *(vary(fixed_config, sizeL1=n, name=f"Cache{n}kB") for n in (2, 4, 8, 16))
+        *(vary(fixed_config, sizeL1=f'{n}B', name=f"Cache{n}B") for n in (512,)),
+        *(vary(fixed_config, sizeL1=n, name=f"Cache{n}kB") for n in (8, 16, 64, 128))
     ], HERE.joinpath("Cache"))
 
     simulate_generation([
         fixed_config,
-        *(vary(fixed_config, MemReadLat=n, name=f"MemRead{n}") for n in (2, 4, 8, 16))
+        *(vary(fixed_config, MemReadLat=n, name=f"MemRead{n}") for n in (8, 16, 32))
     ], HERE.joinpath("MemRead"))
 
     simulate_generation([
         fixed_config,
-        *(vary(fixed_config, numPhysIntRegs=n, name=f"IntRegs{n}") for n in (64, 128, 256, 512, 1024))
+        *(vary(fixed_config, numPhysIntRegs=n, name=f"IntRegs{n}") for n in (64, 128, 256))
     ], HERE.joinpath("IntRegs"))
 
 if __name__ == "__main__":
